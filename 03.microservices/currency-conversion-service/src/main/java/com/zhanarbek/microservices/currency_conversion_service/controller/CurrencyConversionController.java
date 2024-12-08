@@ -1,6 +1,7 @@
 package com.zhanarbek.microservices.currency_conversion_service.controller;
 
 import com.zhanarbek.microservices.currency_conversion_service.bean.CurrencyConversion;
+import com.zhanarbek.microservices.currency_conversion_service.proxy.CurrencyExchangeProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,13 @@ import java.util.HashMap;
 @RestController
 public class CurrencyConversionController {
 
-    @Autowired
-    private Environment env;
+    private final Environment env;
+    private final CurrencyExchangeProxy proxy;
+
+    public CurrencyConversionController(Environment env, CurrencyExchangeProxy proxy) {
+        this.env = env;
+        this.proxy = proxy;
+    }
 
     @GetMapping("/currency-conversion/from/{from}/to/{to}/quantity/{quantity}")
     public CurrencyConversion calculateCurrencyConversion(
@@ -24,9 +30,6 @@ public class CurrencyConversionController {
             @PathVariable String to,
             @PathVariable BigDecimal quantity
     ){
-        String port = env.getProperty("server.port");
-        String env = this.env.getProperty("spring.application.name");
-
         HashMap<String, String> uriVariables = new HashMap<>();
         uriVariables.put("from", from);
         uriVariables.put("to", to);
@@ -41,7 +44,23 @@ public class CurrencyConversionController {
                 from, to, quantity,
                 currencyConversion.getConversionMultiple(),
                 quantity.multiply(currencyConversion.getConversionMultiple()),
-                env + " : " + port);
+                currencyConversion.getEnvironment() + " restTemplate");
+    }
+
+
+    @GetMapping("/currency-conversion-feign/from/{from}/to/{to}/quantity/{quantity}")
+    public CurrencyConversion calculateCurrencyConversionFeign(
+            @PathVariable String from,
+            @PathVariable String to,
+            @PathVariable BigDecimal quantity
+    ){
+        CurrencyConversion currencyConversion = proxy.retrieveExchangeValue(from, to);
+
+        return new CurrencyConversion(currencyConversion.getId(),
+                from, to, quantity,
+                currencyConversion.getConversionMultiple(),
+                quantity.multiply(currencyConversion.getConversionMultiple()),
+                currencyConversion.getEnvironment() + " feign");
     }
 
 }
