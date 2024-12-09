@@ -14,7 +14,8 @@ public class CircuitBreakerController {
     private Logger logger = LoggerFactory.getLogger(CircuitBreakerController.class);
 
     @GetMapping("/sample-api")
-    @Retry(name = "sample-api", fallbackMethod = "hardcodedResponse")
+//    @Retry(name = "sample-api", fallbackMethod = "hardcodedResponse")
+    @Retry(name = "default", fallbackMethod = "hardcodedResponse")
     public String sampleApi(){
 
         logger.info("Sample Api call received");
